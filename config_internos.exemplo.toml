@@ -1,0 +1,58 @@
+# Modelo de configuração do cruzamento com as bases internas.
+# Copie para <pasta dos dados internos>\config.toml (o comando `python cruzar_clientes.py --modelo` faz isso) e
+# troque só os NOMES DAS COLUNAS pelos cabeçalhos das suas planilhas. Nenhum dado vai neste arquivo.
+#
+# Pasta dos dados internos (padrão: %USERPROFILE%\cvm_data\internos, fora do OneDrive):
+#   entrada\   <- coloque aqui seus arquivos (.xlsx ou .csv)
+#   saida\     <- o resultado (Prospeccao_BOV.xlsx) aparece aqui
+#   config.toml, de_para_manual.csv
+
+# --- Clientes que operam BMF e BOV ----------------------------------------------------------------------------
+# Opção A: um arquivo para cada segmento (cada linha = uma conta)
+[bmf]
+arquivo = "clientes_bmf.xlsx"
+# aba     = "Plan1"          # opcional, só para Excel com várias abas
+grupo   = "COD_GRUPO"        # código do grupo econômico
+cliente = "NOME_CLIENTE"     # nome da empresa
+conta   = "CONTA"            # número da conta (identificador)
+
+[bov]
+arquivo = "clientes_bov.xlsx"
+grupo   = "COD_GRUPO"
+cliente = "NOME_CLIENTE"
+conta   = "CONTA"
+
+# Opção B: um arquivo só, com uma coluna que diz o segmento (apague os blocos [bmf] e [bov] e use este)
+# [clientes]
+# arquivo     = "clientes.xlsx"
+# grupo       = "COD_GRUPO"
+# cliente     = "NOME_CLIENTE"
+# conta       = "CONTA"
+# segmento    = "SEGMENTO"
+# valores_bmf = ["BMF"]
+# valores_bov = ["BOV", "BOVESPA"]
+
+# --- Base institucional (tem CNPJ: é a ponte mais confiável com a CVM) ----------------------------------------
+[institucional]
+arquivo = "institucional.xlsx"
+cnpj    = "CNPJ"
+nome    = "NOME"
+
+# --- Prospects (nome + marca de prospect) ---------------------------------------------------------------------
+[prospects]
+arquivo = "prospects.xlsx"
+nome    = "NOME"
+# marca         = "PROSPECT"                # opcional: coluna que diz se é prospect (sem ela, toda linha é prospect)
+# valores_marca = ["S", "SIM", "PROSPECT"]   # valores dessa coluna que significam "é prospect"
+
+# --- Opções (pode deixar como está) ---------------------------------------------------------------------------
+[opcoes]
+aum = "aum_ex_fic"            # AuM usado para ordenar: aum_total | aum_ex_fic | aum_nao_exclusivo
+unir_por_grupo = "auto"       # true | false | "auto" (desliga sozinho se o código de grupo não vale nas duas bases)
+aceitar = ["alta", "média"]   # vínculos com a CVM usados para trazer o AuM; os outros vão para 'Revisar vínculos'
+
+# [opcoes.limites]            # só para recalibrar o casamento por nome (notas de 0 a 100)
+# alta = 95
+# media = 88
+# baixa = 80
+# margem = 4

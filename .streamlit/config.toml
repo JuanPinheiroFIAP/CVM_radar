@@ -1,0 +1,35 @@
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = true
+port = 8501
+# Só esta máquina. No servidor, abrir_dashboard.bat libera a rede interna (--server.address 0.0.0.0).
+address = "localhost"
+
+# Tema: paleta do guia de dataviz (azul = positivo/ação, vermelho = negativo), fonte do sistema.
+[theme]
+primaryColor = "#2a78d6"
+font = "Segoe UI, system-ui, -apple-system, sans-serif"
+baseRadius = "0.7rem"
+blueColor = "#2a78d6"
+redColor = "#e34948"
+orangeColor = "#eb6834"
+greenColor = "#1baf7a"
+
+[theme.light]
+backgroundColor = "#f9f9f7"
+secondaryBackgroundColor = "#efeeea"
+textColor = "#0b0b0b"
+borderColor = "#e1e0d9"
+
+[theme.dark]
+primaryColor = "#3987e5"
+backgroundColor = "#0d0d0d"
+secondaryBackgroundColor = "#1a1a19"
+textColor = "#ffffff"
+borderColor = "#2c2c2a"
+blueColor = "#3987e5"
+redColor = "#e66767"
+orangeColor = "#d95926"
+greenColor = "#199e70"
