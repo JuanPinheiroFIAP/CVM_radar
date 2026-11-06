@@ -18,15 +18,22 @@ def _sim_nao(s: pd.Series) -> pd.Series:
     return s.map({True: "Sim", False: "Não"})
 
 
-def tabela_lista(df: pd.DataFrame, aum: str, com_motivo: bool) -> tuple[pd.DataFrame, dict]:
+def tabela_lista(df: pd.DataFrame, aum: str, com_motivo: bool, todos: bool = False) -> tuple[pd.DataFrame, dict]:
     """Colunas legíveis para o time de BOV, com os formatos de cada uma."""
     d = {"Posição": np.arange(1, len(df) + 1), "Cliente": df.cliente}
+    if todos:
+        d["Situação"] = df.situacao
     if com_motivo:
         d["Por que abordar"] = df.motivos
     d["Atenção"] = np.where(df.parecido_bov != "", "Nome parecido com conta BOV: " + df.parecido_bov,
                             np.where(df.bov_fraco_mesma_gestora, "Possível conta BOV (vínculo fraco com a mesma gestora): conferir", ""))
-    d.update({"Grupo(s)": df.grupos, "Opera BMF": _sim_nao(df.opera_bmf), "Institucional": _sim_nao(df.institucional),
-              "Prospect": _sim_nao(df.prospect), "Contas BMF": df.contas_bmf, "CNPJ (base institucional)": df.cnpj_inst,
+    d.update({"Grupo(s)": df.grupos, "Opera BMF": _sim_nao(df.opera_bmf)})
+    if todos:
+        d["Opera BOV"] = _sim_nao(df.opera_bov)
+    d.update({"Institucional": _sim_nao(df.institucional), "Prospect": _sim_nao(df.prospect), "Contas BMF": df.contas_bmf})
+    if todos:
+        d["Contas BOV"] = df.contas_bov
+    d.update({"CNPJ (base institucional)": df.cnpj_inst,
               "Gestora na CVM": df.get("nome_gestor"), "CNPJ da gestora": df.get("cnpj_gestor_fmt"),
               "Vínculo com a CVM": df.confianca.map(VINCULO_ROTULO),
               f"{AUM_ROTULO.get(aum, aum)} (R$ bi)": df[aum] / 1e9})
@@ -67,6 +74,8 @@ def _leia_me(w: pd.ExcelWriter, resumo: dict) -> None:
         ("BMF sem BOV: clientes com conta BMF e nenhuma conta BOV.", None),
         ("Institucional sem BOV: clientes da base institucional sem conta BOV.", None),
         ("Prospects: quem a mesa marcou como prospect e não tem conta BOV.", None),
+        ("Todos os clientes: a base completa (cada cliente uma vez), com Situação, Opera BMF/BOV, Institucional e Prospect, "
+         "ordenada por AuM. Use o filtro do Excel para montar qualquer recorte.", None),
         ("Revisar vínculos: nomes que o sistema ligou à CVM com pouca certeza. Corrija e rode de novo (veja abaixo).", None),
         ("Resumo: contagens do cruzamento (quantos nomes, quantos vínculos de cada tipo).", None),
         ("", None),
@@ -105,6 +114,7 @@ def _tabela_resumo(resumo: dict) -> pd.DataFrame:
               ("Vínculos por confiança", ", ".join(f"{k}: {v}" for k, v in resumo["vinculos_por_confianca"].items())),
               ("Vínculos por tipo", ", ".join(f"{k}: {v}" for k, v in resumo["vinculos_por_tipo"].items())),
               ("Clientes consolidados", resumo["clientes_consolidados"]),
+              ("Clientes por situação", ", ".join(f"{k}: {v}" for k, v in resumo["clientes_por_situacao"].items())),
               ("Unir por código de grupo", "sim" if resumo["unir_por_grupo"] else "não"),
               ("Códigos de grupo nas duas bases / com nomes parecidos",
                f"{resumo['diagnostico_grupos']['codigos_em_comum']} / {resumo['diagnostico_grupos']['com_nomes_parecidos']}"),
@@ -133,6 +143,9 @@ def gravar(res: dict, pasta_saida: Path, aum: str) -> Path:
                                    ("Institucional sem BOV", "inst_sem_bov", False), ("Prospects", "prospects", False)):
             tab, fmt = tabela_lista(ls[chave], aum, motivo)
             _escrever(w, aba, tab, fmt, barras=(aum_col,), destaque=("Atenção",))
+        todos = res["clientes"].sort_values([aum, "cliente"], ascending=[False, True], na_position="last")
+        tab, fmt = tabela_lista(todos, aum, False, todos=True)
+        _escrever(w, "Todos os clientes", tab, fmt, barras=(aum_col,), destaque=("Atenção",))
         rev = tabela_revisao(res["revisao"])
         _escrever(w, "Revisar vínculos", rev, {"Nota": "0.0"})
         _tabela_resumo(res["resumo"]).to_excel(w, sheet_name="Resumo", index=False)

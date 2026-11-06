@@ -111,6 +111,15 @@ def test_listas():
     assert nomes(res["abordagem"]) == {"ALFA", "DELTA", "HELIOS", "OMEGA", "EPSILON", "KAPPA"}
 
 
+def test_situacao_de_todos_os_clientes():
+    cli = rodar()["clientes"].set_index("cliente").situacao
+    assert cli["BETA ASSET MANAGEMENT"] == "Opera BMF e BOV"           # BMF e BOV, mesmo grupo
+    assert cli["GAMA CAPITAL"] == "Opera BMF e BOV"                    # BOV por um fundo dela: mesma gestora
+    assert cli["ZETA PARTICIPAÇÕES"] == "Opera só BOV"
+    assert cli["ALFA GESTÃO DE RECURSOS LTDA"] == "BMF sem BOV"
+    assert cli["OMEGA PREVIDÊNCIA"] == "Institucional sem BOV" and cli["KAPPA SECURITIES"] == "Prospect"
+
+
 def test_aum_e_ordenacao():
     ab = rodar()["listas"]["abordagem"].set_index("cliente")
     assert ab.loc["ALFA GESTÃO DE RECURSOS LTDA", "aum_ex_fic"] == 4e9

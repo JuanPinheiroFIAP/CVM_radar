@@ -508,6 +508,13 @@ def marcar_atencao(cli: pd.DataFrame, e: pd.DataFrame, corte: float = 88.0) -> p
     return out
 
 
+def situacao(cli: pd.DataFrame) -> pd.Series:
+    """Onde cada cliente está para o BOV, em uma palavra só (para filtrar): quem já opera BOV vem primeiro."""
+    return pd.Series(np.select(
+        [cli.opera_bmf & cli.opera_bov, cli.opera_bov, cli.opera_bmf, cli.institucional, cli.prospect],
+        ["Opera BMF e BOV", "Opera só BOV", "BMF sem BOV", "Institucional sem BOV", "Prospect"], "Outro"), index=cli.index)
+
+
 def listas(cli: pd.DataFrame, aum: str) -> dict[str, pd.DataFrame]:
     def ordenar(df: pd.DataFrame) -> pd.DataFrame:
         return df.sort_values([aum, "cliente"], ascending=[False, True], na_position="last").reset_index(drop=True)
@@ -616,6 +623,7 @@ def executar(pasta: Path, config: dict, uni: Universo | None = None, gestoras: p
 
     e = consolidar(ent, mt, aceitar, unir_grupo)
     cli = marcar_atencao(enriquecer(montar_clientes(e), gestoras, aluguel), e)
+    cli["situacao"] = situacao(cli)
     saidas = listas(cli, aum)
 
     por_origem = ent.groupby("origem").size().to_dict()
@@ -625,6 +633,7 @@ def executar(pasta: Path, config: dict, uni: Universo | None = None, gestoras: p
         "vinculos_por_confianca": mt.confianca.value_counts().to_dict(),
         "vinculos_por_tipo": mt[mt.vinculo != ""].vinculo.str.replace(r" \(.*\)", "", regex=True).value_counts().to_dict(),
         "clientes_consolidados": int(len(cli)),
+        "clientes_por_situacao": cli.situacao.value_counts().to_dict(),
         "unir_por_grupo": unir_grupo, "diagnostico_grupos": diag_grupo,
         "listas": {k: int(len(v)) for k, v in saidas.items()},
         "listas_com_aum": {k: int(v.tem_cvm.sum()) for k, v in saidas.items()},
